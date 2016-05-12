@@ -7,7 +7,6 @@ const PORT = 8080;
 // App
 const app = express();
 mongoose.connect('mongodb://localhost/jstest');
-var Project = mongoose.model('Project', { name: String });
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -22,69 +21,22 @@ app.get('/', function (req, res) {
 });
 
 function endResponseWithError(response, err){
+    console.log('Error response', err);
     return response.end('{"error": "' + JSON.stringify(err) + '}');
 }
 
 function successResponse(response){
+    console.log('Success response');
     response.end('{"status": "ok"}');
 }
 
-app.post('/add-project', function(req, res){
-    if(!req.body.name){
-        return endResponseWithError(res, 'No name provided');
-    }
+global.app = app;
+global.mongoose = mongoose;
+global.successResponse = successResponse;
+global.endResponseWithError = endResponseWithError;
 
-    var project = new Project({ name: req.body.name});
-
-    project.save(function(err){
-        if(err){
-            endResponseWithError(res, 'error');
-        }
-    });
-
-    successResponse(res);
-});
-
-app.post('/edit-project', function(req, res){
-    if(!req.body.name){
-        return endResponseWithError(res, 'No name provided');
-    }
-
-    if(!req.body.id){
-        return endResponseWithError(res, 'No project id provided');
-    }
-
-    Project.findById(req.body.id, function(err, found){
-       found.name = req.body.name;
-       found.save(function(err){
-           if(err){
-               endResponseWithError(res, 'error');
-           }else{
-               successResponse(res);
-           }
-       });
-    });
-});
-
-app.get('/list-projects', function(req, res){
-    Project.find(function(err, projects){
-        res.send(JSON.stringify(projects));
-    });
-});
-
-app.post('/delete-project', function(req, res){
-    if(!req.body.id){
-        return endResponseWithError(res, 'No id provided');
-    }
-
-    Project.findByIdAndRemove(req.body.id, function(err, found){
-        if(err){
-            return endResponseWithError(res, 'Error');
-        }
-
-        successResponse(res);
-    });
-});
+require('./projects');
+require('./todos');
 
 app.listen(PORT);
 console.log('Running on http://localhost:' + PORT);
